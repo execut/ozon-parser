@@ -8,10 +8,12 @@ import (
 	"github.com/redis/go-redis/v9"
 	"log"
 	"math"
-	"time"
 )
 
 func ParseReviews(productId string) []ReviewsData {
+	var ok bool
+	lastPage := 999
+	var result []ReviewsData
 	// New creates a new context for use with chromedp. With this context
 	// you can use chromedp as you normally would.
 	config := cu.NewConfig(
@@ -19,17 +21,13 @@ func ParseReviews(productId string) []ReviewsData {
 		cu.WithHeadless(),
 
 		// If the webelement is not found within 10 seconds, timeout.
-		cu.WithTimeout(10*time.Second),
+		//cu.WithTimeout(10 * time.Second),
 	)
-	ctx, cancel, err := cu.New(config)
+	ctx, _, err := cu.New(config)
 	if err != nil {
 		panic(err)
 	}
-	defer cancel()
 
-	var ok bool
-	lastPage := 999
-	var result []ReviewsData
 	for page := 1; page <= lastPage; page++ {
 		url := fmt.Sprintf("https://www.ozon.ru/product/%s/reviews/?page=%v", productId, page)
 		dataState, err := GetCachedValue(url)
@@ -40,8 +38,11 @@ func ParseReviews(productId string) []ReviewsData {
 				chromedp.AttributeValue(`#state-webListReviews-3231710-default-1`, `data-state`, &dataState, &ok),
 			)
 			if err != nil {
+				fmt.Println(url)
 				log.Fatal(err)
 			}
+
+			//time.Sleep(time.Second * 10)
 
 			SetCachedValue(url, dataState)
 		}
@@ -54,10 +55,9 @@ func ParseReviews(productId string) []ReviewsData {
 
 		if lastPage == 999 {
 			lastPage = int(math.Ceil(float64(reviewsData.Paging.Total) / float64(reviewsData.Paging.PerPage)))
-		}
-
-		if lastPage > 10 {
-			lastPage = 10
+			if lastPage > 10 {
+				lastPage = 10
+			}
 		}
 
 		result = append(result, reviewsData)

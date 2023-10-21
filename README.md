@@ -4,6 +4,7 @@
 
 1. Go, Python
 2. `pip install --user pymorphy2-dicts-ru`
+3. `apt install xvfb`
 
 ## Usage
 1. Insert into `token.txt` value of cookie __Secure-access-token

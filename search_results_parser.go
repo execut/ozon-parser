@@ -134,7 +134,7 @@ func GetSeleniumDriver() selenium.WebDriver {
 		panic(err)
 	}
 
-	err = driver.Get("https://ozon.ru/")
+	err = driver.Get("https://seller.ozon.ru/api/explainer-service/v1/explanation")
 	if err != nil {
 		panic(err)
 	}

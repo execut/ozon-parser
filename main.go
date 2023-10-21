@@ -29,10 +29,11 @@ func main() {
 			var reviewsText = ""
 			result := ParseAnalyticsForQuery(query)
 			for _, v := range result.Items {
-				if v.IsTraforetto || v.SearchPromotionEnabled {
+				if v.IsTraforetto || v.SearchPromotionEnabled || v.IsInPromo {
 					continue
 				}
 
+				fmt.Println(fmt.Sprintf("Parse reviews for https://www.ozon.ru/product/%s/reviews/", v.Sku))
 				reviewsPages := ParseReviews(v.Sku)
 				reviewsText += ExtractTextFromReviews(reviewsPages)
 			}
