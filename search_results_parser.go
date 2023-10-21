@@ -149,7 +149,8 @@ func GetSeleniumDriver() selenium.WebDriver {
 		"--disable-dev-shm-usage",
 		"disable-gpu",
 		// "--headless",  // comment out this line to see the browser
-	}})
+	},
+		Path: "/usr/local/etc/chrome-114/chrome"})
 
 	driver, err = selenium.NewRemote(caps, "")
 	if err != nil {
