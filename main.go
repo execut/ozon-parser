@@ -39,9 +39,9 @@ func main() {
 			}
 
 			words := CountWords(reviewsText)
-			for _, word := range words {
-				if word.value < 5 {
-					continue
+			for key, word := range words {
+				if key > 25 {
+					break
 				}
 
 				fmt.Println(word.key, ": ", word.value)
