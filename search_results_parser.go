@@ -80,47 +80,53 @@ func SendAnalyticsHttpRequest(query string) string {
 
 	val, err := GetCachedValue(url)
 	if err != redis.Nil {
-		if !strings.Contains(val, "{\"code\":13,") && strings.HasSuffix(val, "}") {
-			return val
-		}
+		return val
 	}
 
 	driver := GetSeleniumDriver()
 
-	err = driver.Get(url)
-	if err != nil {
-		panic(err)
+	errorMessage := ""
+	for errorsCount := 0; errorsCount < 2; errorsCount++ {
+		err = driver.Get(url)
+		if err != nil {
+			panic(err)
+		}
+
+		element, err := driver.FindElement(selenium.ByCSSSelector, "pre")
+		if err != nil {
+			panic(err)
+		}
+
+		dataJson, err := element.Text()
+		if err != nil {
+			panic(err)
+		}
+
+		if strings.HasPrefix(dataJson, "{\"error\"") {
+			panic("Token expire")
+		}
+
+		if strings.Contains(dataJson, "{\"code\":13,") {
+			errorMessage = "Bad response: " + dataJson
+			continue
+		}
+
+		if !strings.HasSuffix(dataJson, "}") {
+			errorMessage = "Wrong suffix"
+			continue
+		}
+
+		if !json.Valid([]byte(dataJson)) {
+			errorMessage = "Wrong json"
+			continue
+		}
+
+		SetCachedValue(url, dataJson)
+
+		return dataJson
 	}
 
-	element, err := driver.FindElement(selenium.ByCSSSelector, "pre")
-	if err != nil {
-		panic(err)
-	}
-
-	dataJson, err := element.Text()
-	if err != nil {
-		panic(err)
-	}
-
-	if strings.HasPrefix(dataJson, "{\"error\"") {
-		panic("Token expire")
-	}
-
-	if strings.Contains(dataJson, "{\"code\":13,") {
-		panic("Bad response: " + dataJson)
-	}
-
-	if !strings.HasSuffix(dataJson, "}") {
-		panic("Wrong suffix")
-	}
-
-	if !json.Valid([]byte(dataJson)) {
-		panic("Wrong json")
-	}
-
-	SetCachedValue(url, dataJson)
-
-	return dataJson
+	panic(errorMessage)
 }
 
 var driver selenium.WebDriver
