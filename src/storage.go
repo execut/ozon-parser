@@ -4,6 +4,7 @@ import (
     "domain"
     "gorm.io/driver/postgres"
     "gorm.io/gorm"
+    "os"
     "time"
 )
 
@@ -52,7 +53,7 @@ func connectToDatabase() *gorm.DB {
         return db
     }
 
-    db, err = gorm.Open(postgres.Open("postgresql://postgres@db/ozon-parser?password=postgres"), &gorm.Config{})
+    db, err = gorm.Open(postgres.Open("postgresql://postgres@"+os.Getenv("DB_HOST")+"/ozon-parser?password="+os.Getenv("DB_PASSWORD")), &gorm.Config{})
     if err != nil {
         panic("failed to connect database")
     }

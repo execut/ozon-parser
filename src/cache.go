@@ -3,6 +3,7 @@ package main
 import (
     "context"
     "github.com/redis/go-redis/v9"
+    "os"
     "time"
 )
 
@@ -37,8 +38,8 @@ func initRedisClient() {
     if rdb == nil {
         redisCtx = context.Background()
         rdb = redis.NewClient(&redis.Options{
-            Addr:     "cache:6379",
-            Password: "",
+            Addr:     os.Getenv("REDIS_HOST") + ":6379",
+            Password: os.Getenv("REDIS_PASSWORD"),
             DB:       0,
         })
     }
