@@ -1,11 +1,19 @@
 package main
 
-import "github.com/redis/go-redis/v9"
+import (
+	"github.com/redis/go-redis/v9"
+	"time"
+)
 
 var rdb *redis.Client
 
+func getSecondOfDayBetween() time.Duration {
+	t := time.Now()
+	return time.Duration(float64(60*60*24-60*60*t.Hour()-60*t.Minute()-t.Second()) * float64(time.Second))
+}
+
 func SetCachedValue(url string, dataJson string) {
-	err := rdb.Set(ctx, url, dataJson, 0).Err()
+	err := rdb.Set(ctx, url, dataJson, getSecondOfDayBetween()).Err()
 	if err != nil {
 		panic(err)
 	}
