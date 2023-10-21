@@ -19,3 +19,10 @@
 1. Add keywords to file `words-for-reviews.csv`
 2. Run parser: `go run ozon-rank-parser.go reviews`
 3. Check parse result in file `reviews.csv`
+
+## Todo
+- [ ] Input and output files as command arguments
+- [ ] Docker environment
+- [ ] K8s environment
+- [ ] Functional tests
+- [ ] Microservice parser

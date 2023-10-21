@@ -1,23 +1,26 @@
 version: '3.8'
 services:
+  app:
+    build:
+      dockerfile: Dockerfile
+    networks:
+      ozon-parser:
+    volumes:
+      - ./data:/data
   cache:
     image: redis:latest
-    ports:
-      - '6379:6379'
     command: redis-server --appendonly yes
     volumes:
       - cache:/data
     networks:
       ozon-parser:
-  postgres:
+  db:
     image: postgres:latest
     environment:
       POSTGRES_DB: "ozon-parser"
       POSTGRES_PASSWORD: "postgres"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - '5432:5432'
     networks:
       ozon-parser:
 volumes:

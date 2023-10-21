@@ -52,7 +52,7 @@ func connectToDatabase() *gorm.DB {
         return db
     }
 
-    db, err = gorm.Open(postgres.Open("postgresql://postgres@localhost/ozon-parser?password=postgres"), &gorm.Config{})
+    db, err = gorm.Open(postgres.Open("postgresql://postgres@db/ozon-parser?password=postgres"), &gorm.Config{})
     if err != nil {
         panic("failed to connect database")
     }
