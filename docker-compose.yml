@@ -7,6 +7,23 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - cache:/data
+    networks:
+      ozon-parser:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: "ozon-parser"
+      POSTGRES_PASSWORD: "postgres"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    networks:
+      ozon-parser:
 volumes:
   cache:
     driver: local
+  pgdata:
+    driver: local
+networks:
+  ozon-parser:
