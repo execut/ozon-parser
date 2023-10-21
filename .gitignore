@@ -1,6 +1,6 @@
 .idea
-words.csv
-result.csv
+words-for-positions.csv
+words-for-reviews.csv
 token.txt
 chromedriver
 positions.csv

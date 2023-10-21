@@ -20,24 +20,35 @@ type KeywordAnalyticsResult struct {
 	Data      domain.AnalyticsData `gorm:"serializer:json"`
 }
 
-func SaveAnalyticsForQuery(keyword Keyword, items domain.AnalyticsData) {
+func SaveAnalyticsForQuery(keyword domain.Keyword, items domain.AnalyticsData) {
 	db := connectToDatabase()
 
 	// Create
-	keyword = Keyword{Name: keyword.Name}
-	db.Where(Keyword{Name: keyword.Name}).Attrs(Keyword{Name: keyword.Name}).FirstOrCreate(&keyword)
-	result := db.Where("created_at > ? AND keyword_id = ?", time.Now().Add(-time.Hour*24), keyword.ID).Find(&KeywordAnalyticsResult{})
+	keywordModel := Keyword{Name: keyword.Name}
+	db.Where(Keyword{Name: keyword.Name}).Attrs(Keyword{Name: keyword.Name}).FirstOrCreate(&keywordModel)
+	loc, _ := time.LoadLocation("Local")
+	year, month, day := time.Now().In(loc).Date()
+	timeOfMidnight := time.Date(year, month, day, 0, 0, 0, 0, loc)
+
+	result := db.Where("created_at > ? AND keyword_id = ?", timeOfMidnight, keywordModel.ID).Find(&KeywordAnalyticsResult{})
 	if result.RowsAffected > 0 {
 		return
 	}
 
-	var keywordAnalyticsResult = KeywordAnalyticsResult{Data: items, KeywordID: keyword.ID}
+	var keywordAnalyticsResult = KeywordAnalyticsResult{Data: items, KeywordID: keywordModel.ID}
 
 	db.Create(&keywordAnalyticsResult)
 }
 
+var db *gorm.DB = nil
+
 func connectToDatabase() *gorm.DB {
-	db, err := gorm.Open(postgres.Open("postgresql://postgres@localhost/ozon-parser?password=postgres"), &gorm.Config{})
+	var err error
+	if db != nil {
+		return db
+	}
+
+	db, err = gorm.Open(postgres.Open("postgresql://postgres@localhost/ozon-parser?password=postgres"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}

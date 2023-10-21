@@ -56,7 +56,8 @@ func CalculateAverageRankForQuery(result domain.AnalyticsData) {
 	fmt.Println(fmt.Sprintf("%.4f", totalAverageResult))
 }
 
-func ParseAnalyticsForQuery(query string) domain.AnalyticsData {
+func ParseAnalyticsForQuery(keyword domain.Keyword) domain.AnalyticsData {
+	query := keyword.Name
 	query = strings.TrimSpace(query)
 	dataJson := SendAnalyticsHttpRequest(query)
 
@@ -79,7 +80,9 @@ func SendAnalyticsHttpRequest(query string) string {
 
 	val, err := GetCachedValue(url)
 	if err != redis.Nil {
-		return val
+		if !strings.Contains(val, "{\"code\":13,") {
+			return val
+		}
 	}
 
 	driver := GetSeleniumDriver()
@@ -101,6 +104,10 @@ func SendAnalyticsHttpRequest(query string) string {
 
 	if strings.HasPrefix(dataJson, "{\"error\"") {
 		panic("Token expire")
+	}
+
+	if strings.Contains(dataJson, "{\"code\":13,") {
+		panic("Bad response: " + dataJson)
 	}
 
 	SetCachedValue(url, dataJson)
