@@ -21,8 +21,8 @@
 3. Check parse result in file `reviews.csv`
 
 ## Todo
-- [ ] Input and output files as command arguments
-- [ ] Docker environment
+- [x] Input and output files as command arguments for positions
+- [x] Docker environment for positions command
 - [ ] K8s environment
 - [ ] Functional tests
 - [ ] Microservice parser
