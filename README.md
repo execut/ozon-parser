@@ -7,16 +7,8 @@
 3. `apt install xvfb`
 
 ## Before
-1. Insert into `token.txt` value of cookie __Secure-access-token
-2. Download chromedriver to root project folder from [here](https://chromedriver.storage.googleapis.com/index.html?path=114.0.5735.90/)
-```shell
-wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
-unzip chromedriver_linux64.zip
-rm LICENSE.chromedriver
-rm chromedriver_linux64.zip
-```
-2. Add to words.csv you keywords for parse
-3. Run Redis: `docker compose up`
+1. Add to `words-for-positions.csv` you keywords for parse
+2. Run Redis+PostgreSQL: `docker compose up -d`
 
 ## Parse keywords positions
 1. Add keywords to file `words-for-positions.csv`

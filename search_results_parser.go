@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"execut/ozon_parser/token/chromeCookie"
 	"fmt"
+	cu "github.com/Davincible/chromedp-undetected"
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/chromedp"
 	"github.com/redis/go-redis/v9"
-	"github.com/tebeka/selenium"
-	"github.com/tebeka/selenium/chrome"
-	"math"
 	"net/url"
 	"strings"
+	"time"
 )
 
 func OnlySimpleProducts(result domain.AnalyticsData) {
@@ -72,7 +74,42 @@ func ParseAnalyticsForQuery(keyword domain.Keyword) domain.AnalyticsData {
 	return result
 }
 
-var ctx = context.Background()
+var ctx context.Context = nil
+
+func getChromeDpContext() context.Context {
+	if ctx != nil {
+		return ctx
+	}
+
+	config := cu.NewConfig(
+		cu.WithHeadless(),
+		cu.WithTimeout(60*time.Second),
+	)
+	ctx, _, err := cu.New(config)
+	if err != nil {
+		panic(err)
+	}
+
+	return ctx
+}
+
+func setCookie(name, value, domain, path string, httpOnly, secure bool) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		expr := cdp.TimeSinceEpoch(time.Now().Add(180 * 24 * time.Hour))
+		var err = network.SetCookie(name, value).
+			WithExpires(&expr).
+			WithDomain(domain).
+			WithPath(path).
+			WithHTTPOnly(httpOnly).
+			WithSecure(secure).
+			Do(ctx)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
 
 func SendAnalyticsHttpRequest(query string) string {
 	queryEscaped := url.QueryEscape(query)
@@ -83,21 +120,17 @@ func SendAnalyticsHttpRequest(query string) string {
 		return val
 	}
 
-	driver := GetSeleniumDriver()
-
 	errorMessage := ""
 	for errorsCount := 0; errorsCount < 2; errorsCount++ {
-		err = driver.Get(url)
-		if err != nil {
-			panic(err)
-		}
+		var ctx = getChromeDpContext()
+		var dataJson string
+		var err = chromedp.Run(ctx,
+			setCookie("__Secure-access-token", GetToken(), ".ozon.ru", "/", true, true),
+			setCookie("__Secure-refresh-token", GetToken(), ".ozon.ru", "/", true, true),
+			chromedp.Navigate(url),
+			chromedp.InnerHTML(`pre`, &dataJson),
+		)
 
-		element, err := driver.FindElement(selenium.ByCSSSelector, "pre")
-		if err != nil {
-			panic(err)
-		}
-
-		dataJson, err := element.Text()
 		if err != nil {
 			panic(err)
 		}
@@ -127,55 +160,6 @@ func SendAnalyticsHttpRequest(query string) string {
 	}
 
 	panic(errorMessage)
-}
-
-var driver selenium.WebDriver
-
-func GetSeleniumDriver() selenium.WebDriver {
-	if driver != nil {
-		return driver
-	}
-
-	// Run Chrome browser
-	_, err := selenium.NewChromeDriverService("./chromedriver", 4444)
-	if err != nil {
-		panic(err)
-	}
-
-	caps := selenium.Capabilities{}
-	caps.AddChrome(chrome.Capabilities{Args: []string{
-		"window-size=1920x1080",
-		"--no-sandbox",
-		"--disable-dev-shm-usage",
-		"disable-gpu",
-		// "--headless",  // comment out this line to see the browser
-	},
-		Path: "/usr/local/etc/chrome-114/chrome"})
-
-	driver, err = selenium.NewRemote(caps, "")
-	if err != nil {
-		panic(err)
-	}
-
-	err = driver.Get("https://seller.ozon.ru/api/explainer-service/v1/explanation")
-	if err != nil {
-		panic(err)
-	}
-
-	token := GetToken()
-
-	cookie := &selenium.Cookie{
-		Name:   "__Secure-access-token",
-		Value:  token,
-		Expiry: math.MaxUint32,
-	}
-	err = driver.AddCookie(cookie)
-
-	if err != nil {
-		panic(err)
-	}
-
-	return driver
 }
 
 func GetToken() string {

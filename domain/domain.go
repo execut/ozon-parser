@@ -23,15 +23,15 @@ type AnalyticsItem struct {
 	IsInPromo              bool    `json:"isInPromo"`
 	Delivery               string  `json:"delivery"`
 	DeliveryBoost          int     `json:"deliveryBoost"`
-	PopularityScore        int     `json:"popularityScore"`
-	SalesScore             int     `json:"salesScore"`
+	PopularityScore        float64 `json:"popularityScore"`
+	SalesScore             float64 `json:"salesScore"`
 	PriceRub               string  `json:"priceRub"`
-	PriceScore             int     `json:"priceScore"`
+	PriceScore             float64 `json:"priceScore"`
 	Rating                 float64 `json:"rating"`
 	RatesCount             int     `json:"ratesCount"`
-	RatingScore            int     `json:"ratingScore"`
-	QueryFitScore          int     `json:"queryFitScore"`
-	PopularityTotalScore   int     `json:"popularityTotalScore"`
+	RatingScore            float64 `json:"ratingScore"`
+	QueryFitScore          float64 `json:"queryFitScore"`
+	PopularityTotalScore   float64 `json:"popularityTotalScore"`
 	DeliverySpeed          string  `json:"deliverySpeed"`
 	FinalResult            float64 `json:"finalResult"`
 	SearchPromotionBoost   float64 `json:"searchPromotionBoost"`
