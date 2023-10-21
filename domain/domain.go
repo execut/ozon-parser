@@ -83,7 +83,7 @@ type AnalyticsData struct {
 			CurSellerItemsAvgRating   float64 `json:"curSellerItemsAvgRating"`
 			CompetitorsItemsAvgRating float64 `json:"competitorsItemsAvgRating"`
 			CompetitorsItemsTopSize   int     `json:"competitorsItemsTopSize"`
-			CurSellerItemsMinRating   int     `json:"curSellerItemsMinRating"`
+			CurSellerItemsMinRating   float64 `json:"curSellerItemsMinRating"`
 			CompetitorsItemsMaxRating float64 `json:"competitorsItemsMaxRating"`
 			CurSellerMinRatingItem    string  `json:"curSellerMinRatingItem"`
 		} `json:"itemsRating"`

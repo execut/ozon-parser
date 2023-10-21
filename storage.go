@@ -62,17 +62,25 @@ func connectToDatabase() *gorm.DB {
 	return db
 }
 
-func ExtractPositionsList(keywords []domain.Keyword) []domain.KeywordAnalyticsResult {
+func ExtractPositionsList(keywords []domain.Keyword, isToday bool) []domain.KeywordAnalyticsResult {
 	var results []domain.KeywordAnalyticsResult
 	var keywordsNames []string
 	for _, keyword := range keywords {
 		keywordsNames = append(keywordsNames, keyword.Name)
 	}
 	var keywordsIds []int
+	db = connectToDatabase()
 	db.Where("name IN ?", keywordsNames).Model(&Keyword{}).Pluck("id", &keywordsIds)
 	db := connectToDatabase()
 	var dbResults []KeywordAnalyticsResult
-	db.Where("created_at > ? AND keyword_id IN ?", timeOfMidnight(), keywordsIds).Preload("Keyword").Find(&dbResults)
+	var query *gorm.DB
+	if isToday {
+		query = db.Where("created_at > ? AND keyword_id IN ?", timeOfMidnight(), keywordsIds)
+	} else {
+		query = db.Where("keyword_id IN ?", keywordsIds)
+	}
+
+	query.Order("created_at ASC").Preload("Keyword").Find(&dbResults)
 	for _, analyticsModel := range dbResults {
 		results = append(results, domain.KeywordAnalyticsResult{Keyword: domain.Keyword{Name: analyticsModel.Keyword.Name}, Data: analyticsModel.Data, Time: analyticsModel.CreatedAt})
 	}

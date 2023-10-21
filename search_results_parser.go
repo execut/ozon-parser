@@ -80,7 +80,7 @@ func SendAnalyticsHttpRequest(query string) string {
 
 	val, err := GetCachedValue(url)
 	if err != redis.Nil {
-		if !strings.Contains(val, "{\"code\":13,") {
+		if !strings.Contains(val, "{\"code\":13,") && strings.HasSuffix(val, "}") {
 			return val
 		}
 	}
@@ -108,6 +108,14 @@ func SendAnalyticsHttpRequest(query string) string {
 
 	if strings.Contains(dataJson, "{\"code\":13,") {
 		panic("Bad response: " + dataJson)
+	}
+
+	if !strings.HasSuffix(dataJson, "}") {
+		panic("Wrong suffix")
+	}
+
+	if !json.Valid([]byte(dataJson)) {
+		panic("Wrong json")
 	}
 
 	SetCachedValue(url, dataJson)

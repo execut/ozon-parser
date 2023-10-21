@@ -1,6 +1,8 @@
 .idea
 words-for-positions.csv
+words-for-best-positions.csv
 words-for-reviews.csv
+words-for-scores.csv
 token.txt
 chromedriver
 positions.csv
