@@ -4,13 +4,13 @@ import (
 	"context"
 	"domain"
 	"encoding/json"
+	"execut/ozon_parser/token/chromeCookie"
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
 	"math"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -178,12 +178,7 @@ func GetSeleniumDriver() selenium.WebDriver {
 }
 
 func GetToken() string {
-	tokenB, err := os.ReadFile("token.txt")
-	if err != nil {
-		panic(err)
-	}
-
-	token := string(tokenB)
+	token, _ := chromeCookie.ReadToken()
 
 	return token
 }
