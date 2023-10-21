@@ -9,6 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"log"
 	"math"
+	"time"
 )
 
 func ParseReviews(productId string) []domain.ReviewsData {
@@ -22,7 +23,7 @@ func ParseReviews(productId string) []domain.ReviewsData {
 		cu.WithHeadless(),
 
 		// If the webelement is not found within 10 seconds, timeout.
-		//cu.WithTimeout(10 * time.Second),
+		cu.WithTimeout(10*time.Second),
 	)
 	ctx, _, err := cu.New(config)
 	if err != nil {
@@ -35,9 +36,9 @@ func ParseReviews(productId string) []domain.ReviewsData {
 		if err == redis.Nil {
 			err = chromedp.Run(ctx,
 				chromedp.Navigate(url),
-				chromedp.WaitVisible(`//*[@id="state-webListReviews-3231710-default-1"]`),
 				chromedp.AttributeValue(`#state-webListReviews-3231710-default-1`, `data-state`, &dataState, &ok),
 			)
+
 			if err != nil {
 				fmt.Println(url)
 				log.Fatal(err)
@@ -67,8 +68,10 @@ func ParseReviews(productId string) []domain.ReviewsData {
 	return result
 }
 
-func ExtractTextFromReviews(reviewsPages []domain.ReviewsData) string {
-	var text string
+func ExtractTextFromReviews(reviewsPages []domain.ReviewsData) (string, string) {
+	var commonText string = ""
+	var positiveText string = ""
+	var negativeText string = ""
 	for _, reviewsPage := range reviewsPages {
 		for _, reviewsList := range reviewsPage.Reviews {
 			content := reviewsList.Content
@@ -77,41 +80,45 @@ func ExtractTextFromReviews(reviewsPages []domain.ReviewsData) string {
 			}
 
 			if content.Comment != "" {
-				text += " " + content.Comment
+				commonText += " " + content.Comment
 			}
 
 			if content.Positive != "" {
-				text += " " + content.Positive
+				positiveText += " " + content.Positive
 			}
 
 			if content.Negative != "" {
-				text += " " + content.Negative
+				negativeText += " " + content.Negative
 			}
 		}
 	}
 
-	return text
+	return commonText + " " + positiveText, negativeText
 }
 
-func ExtractWordsFromReviews(result domain.AnalyticsData) {
-	var reviewsText = ""
+func ExtractWordsFromReviews(result domain.AnalyticsData) domain.ReviewsResult {
+	var negativeText = ""
+	var positiveText = ""
 	for _, v := range result.Items {
 		if v.IsTraforetto || v.SearchPromotionEnabled || v.IsInPromo {
+			continue
+		}
+
+		if v.RatesCount == 0 {
 			continue
 		}
 
 		fmt.Println(fmt.Sprintf("Product page https://www.ozon.ru/product/%s/", v.Sku))
 		fmt.Println(fmt.Sprintf("Parse reviews for https://www.ozon.ru/product/%s/reviews/", v.Sku))
 		reviewsPages := ParseReviews(v.Sku)
-		reviewsText += ExtractTextFromReviews(reviewsPages)
+		positiveTextForItem, negativeTextForItem := ExtractTextFromReviews(reviewsPages)
+		positiveText += " " + positiveTextForItem
+		negativeText += " " + negativeTextForItem
+		fmt.Println(fmt.Sprintf("Parsed %v chars of negative from 50000", len(negativeText)))
+		//if len(negativeText) > 50000 {
+		//	break
+		//}
 	}
 
-	words := CountWords(reviewsText)
-	for key, word := range words {
-		if key > 25 {
-			break
-		}
-
-		fmt.Println(word.key, ": ", word.value)
-	}
+	return domain.ReviewsResult{PositiveWords: CountWords(positiveText), NegativeWords: CountWords(negativeText)}
 }

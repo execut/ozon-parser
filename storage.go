@@ -26,11 +26,8 @@ func SaveAnalyticsForQuery(keyword domain.Keyword, items domain.AnalyticsData) {
 	// Create
 	keywordModel := Keyword{Name: keyword.Name}
 	db.Where(Keyword{Name: keyword.Name}).Attrs(Keyword{Name: keyword.Name}).FirstOrCreate(&keywordModel)
-	loc, _ := time.LoadLocation("Local")
-	year, month, day := time.Now().In(loc).Date()
-	timeOfMidnight := time.Date(year, month, day, 0, 0, 0, 0, loc)
 
-	result := db.Where("created_at > ? AND keyword_id = ?", timeOfMidnight, keywordModel.ID).Find(&KeywordAnalyticsResult{})
+	result := db.Where("created_at > ? AND keyword_id = ?", timeOfMidnight(), keywordModel.ID).Find(&KeywordAnalyticsResult{})
 	if result.RowsAffected > 0 {
 		return
 	}
@@ -38,6 +35,13 @@ func SaveAnalyticsForQuery(keyword domain.Keyword, items domain.AnalyticsData) {
 	var keywordAnalyticsResult = KeywordAnalyticsResult{Data: items, KeywordID: keywordModel.ID}
 
 	db.Create(&keywordAnalyticsResult)
+}
+
+func timeOfMidnight() time.Time {
+	loc, _ := time.LoadLocation("Local")
+	year, month, day := time.Now().In(loc).Date()
+	timeOfMidnight := time.Date(year, month, day, 0, 0, 0, 0, loc)
+	return timeOfMidnight
 }
 
 var db *gorm.DB = nil
@@ -58,11 +62,17 @@ func connectToDatabase() *gorm.DB {
 	return db
 }
 
-func ExtractPositionsList() []domain.KeywordAnalyticsResult {
+func ExtractPositionsList(keywords []domain.Keyword) []domain.KeywordAnalyticsResult {
 	var results []domain.KeywordAnalyticsResult
+	var keywordsNames []string
+	for _, keyword := range keywords {
+		keywordsNames = append(keywordsNames, keyword.Name)
+	}
+	var keywordsIds []int
+	db.Where("name IN ?", keywordsNames).Model(&Keyword{}).Pluck("id", &keywordsIds)
 	db := connectToDatabase()
 	var dbResults []KeywordAnalyticsResult
-	db.Preload("Keyword").Find(&dbResults)
+	db.Where("created_at > ? AND keyword_id IN ?", timeOfMidnight(), keywordsIds).Preload("Keyword").Find(&dbResults)
 	for _, analyticsModel := range dbResults {
 		results = append(results, domain.KeywordAnalyticsResult{Keyword: domain.Keyword{Name: analyticsModel.Keyword.Name}, Data: analyticsModel.Data, Time: analyticsModel.CreatedAt})
 	}

@@ -4,6 +4,7 @@ import (
 	"domain"
 	"encoding/csv"
 	"fmt"
+	"github.com/schollz/progressbar/v3"
 	"io"
 	"log"
 	"os"
@@ -21,8 +22,8 @@ func main() {
 
 	switch os.Args[1] {
 	case "positions":
-		fileName := "words-for-positions.csv"
-		parseKeywordsFromFile(fileName)
+		keywords := extractWordsFromFile("words-for-positions.csv")
+		parseKeywords(keywords)
 
 		f, err := os.Create("positions.csv")
 		defer f.Close()
@@ -34,7 +35,7 @@ func main() {
 		w := csv.NewWriter(f)
 		defer w.Flush()
 
-		positions := ExtractPositionsList()
+		positions := ExtractPositionsList(keywords)
 		header := []string{
 			"Date",
 			"Keyword",
@@ -63,19 +64,39 @@ func main() {
 				position.Keyword.Name,
 				fmt.Sprintf("%v", positionNumber),
 			}
+
 			if positionNumber != -1 {
 				record = append(record, fmt.Sprintf("%v", item.QueryFitScore), fmt.Sprintf("%v", item.FinalResult), fmt.Sprintf("%t", item.IsInPromo), fmt.Sprintf("%t", item.IsTraforetto), fmt.Sprintf("%v", item.SearchPromotionBoost), fmt.Sprintf("%v", item.PopularityScore), fmt.Sprintf("%v", item.PopularityTotalScore))
 			}
+
 			if err := w.Write(record); err != nil {
 				log.Fatalln("error writing record to file", err)
 			}
 		}
 	case "reviews":
-		parseKeywordsFromFile("words-for-reviews.csv")
-		positions := ExtractPositionsList()
+		keywords := extractWordsFromFile("words-for-reviews.csv")
+		parseKeywords(keywords)
+		positions := ExtractPositionsList(keywords)
 		for _, position := range positions {
-			ExtractWordsFromReviews(position.Data)
-			log.Println("Reviews word frequency for " + position.Keyword.Name + ":")
+			result := ExtractWordsFromReviews(position.Data)
+			fmt.Println("Reviews word frequency for " + position.Keyword.Name + ":")
+			fmt.Println("Positive: ")
+			for _, word := range result.PositiveWords {
+				if word.Value < 25 {
+					break
+				}
+
+				fmt.Println(fmt.Sprintf("%s: %v", word.Key, word.Value))
+			}
+
+			fmt.Println("Negative: ")
+			for _, word := range result.NegativeWords {
+				if word.Value < 10 {
+					break
+				}
+
+				fmt.Println(fmt.Sprintf("%s: %v", word.Key, word.Value))
+			}
 		}
 	default:
 		fmt.Println("expected 'parse' or 'positions' subcommands")
@@ -83,13 +104,16 @@ func main() {
 	}
 }
 
-func parseKeywordsFromFile(fileName string) {
-	keywords := extractWordsFromFile(fileName)
-
+func parseKeywords(keywords []domain.Keyword) {
+	bar := progressbar.Default(int64(len(keywords)))
 	for _, keyword := range keywords {
-		fmt.Println(fmt.Sprintf("Begin parse products for %s", keyword.Name))
+		bar.Describe(fmt.Sprintf("Begin parse products for %s", keyword.Name))
 		result := ParseAnalyticsForQuery(keyword)
 		SaveAnalyticsForQuery(keyword, result)
+		e := bar.Add(1)
+		if e != nil {
+			panic(e)
+		}
 	}
 }
 

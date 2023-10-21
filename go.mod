@@ -32,8 +32,13 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
+	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/schollz/progressbar/v3 v3.13.1 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15 // indirect
 	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/term v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 )

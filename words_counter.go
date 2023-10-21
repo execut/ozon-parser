@@ -1,6 +1,7 @@
 package main
 
 import (
+	"domain"
 	"encoding/csv"
 	"github.com/bbalet/stopwords"
 	"github.com/imbue11235/words"
@@ -11,26 +12,21 @@ import (
 	"strings"
 )
 
-type Word struct {
-	key   string
-	value int
-}
-
-func sortedWords(words map[string]int) []Word {
-	var sorted []Word
+func sortedWords(words map[string]int) []domain.Word {
+	var sorted []domain.Word
 	for k, v := range words {
-		sorted = append(sorted, Word{k, v})
+		sorted = append(sorted, domain.Word{k, v})
 	}
 
 	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].value > sorted[j].value
+		return sorted[i].Value > sorted[j].Value
 	})
 	return sorted
 }
 
 var morphInitialized = false
 
-func CountWords(text string) []Word {
+func CountWords(text string) []domain.Word {
 	text = strings.ToLower(text)
 	text = stopwords.CleanString(text, "ru", false)
 

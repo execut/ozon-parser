@@ -251,3 +251,13 @@ type ReviewsData struct {
 		VoteReview    string `json:"voteReview"`
 	} `json:"actions"`
 }
+
+type ReviewsResult struct {
+	PositiveWords []Word
+	NegativeWords []Word
+}
+
+type Word struct {
+	Key   string
+	Value int
+}
