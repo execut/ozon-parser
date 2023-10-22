@@ -20,6 +20,9 @@
 2. Run parser: `go run ozon-rank-parser.go reviews`
 3. Check parse result in file `reviews.csv`
 
+## Pull docker image
+docker pull ghcr.io/execut/ozon-rank-parser:release
+
 ## Todo
 - [x] Input and output files as command arguments for positions
 - [x] Docker environment for positions command

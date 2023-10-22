@@ -4,7 +4,7 @@ import (
     "context"
     "domain"
     "encoding/json"
-    "execut/ozon_parser/token/chromeCookie"
+    "execut/ozon_parser/token"
     "fmt"
     cu "github.com/Davincible/chromedp-undetected"
     "github.com/chromedp/cdproto/cdp"
@@ -16,14 +16,18 @@ import (
     "time"
 )
 
-func OnlySimpleProducts(result domain.AnalyticsData) {
+type SearchResultsParser struct {
+    token token.Token
+}
+
+func (p *SearchResultsParser) OnlySimpleProducts(result domain.AnalyticsData, reviewsParser ReviewsParser) {
     for _, v := range result.Items {
         if v.IsTraforetto || v.SearchPromotionEnabled {
             continue
         }
 
         fmt.Println(fmt.Sprintf("https://www.ozon.ru/product/%s at position %v (Promo: %t)", v.Sku, v.Position, v.IsInPromo))
-        reviewsPages := ParseReviews(v.Sku)
+        reviewsPages := reviewsParser.ParseReviews(v.Sku)
         for _, reviewsPage := range reviewsPages {
             for _, reviewsList := range reviewsPage.Reviews {
                 fmt.Println(reviewsList.Author.FirstName, reviewsList.Author.LastName)
@@ -35,7 +39,7 @@ func OnlySimpleProducts(result domain.AnalyticsData) {
     }
 }
 
-func CalculateAverageRankForQuery(result domain.AnalyticsData) {
+func (p *SearchResultsParser) CalculateAverageRankForQuery(result domain.AnalyticsData) {
     var totalResult float64
     var totalNonTrafaretCount int = 0
     for _, v := range result.Items {
@@ -58,10 +62,10 @@ func CalculateAverageRankForQuery(result domain.AnalyticsData) {
     fmt.Println(fmt.Sprintf("%.4f", totalAverageResult))
 }
 
-func ParseAnalyticsForQuery(keyword domain.Keyword) domain.AnalyticsData {
+func (p *SearchResultsParser) Parse(keyword domain.Keyword) domain.AnalyticsData {
     query := keyword.Name
     query = strings.TrimSpace(query)
-    dataJson := SendAnalyticsHttpRequest(query)
+    dataJson := p.SendAnalyticsHttpRequest(query)
 
     var result domain.AnalyticsData
 
@@ -74,23 +78,26 @@ func ParseAnalyticsForQuery(keyword domain.Keyword) domain.AnalyticsData {
     return result
 }
 
-var ctx context.Context = nil
-
-func getChromeDpContext() context.Context {
-    if ctx != nil {
-        return ctx
-    }
+func (p *SearchResultsParser) getChromeDpContext() (context.Context, context.CancelFunc) {
+    var opts []chromedp.ContextOption
+    //opts = append(opts,
+    //    chromedp.WithLogf(log.Printf),
+    //    chromedp.WithDebugf(log.Printf),
+    //    chromedp.WithErrorf(log.Printf),
+    //)
 
     config := cu.NewConfig(
         cu.WithHeadless(),
         cu.WithTimeout(60*time.Second),
+        cu.WithLogLevel(10),
     )
-    ctx, _, err := cu.New(config)
+    config.ContextOptions = opts
+    ctx, cancel, err := cu.New(config)
     if err != nil {
         panic(err)
     }
 
-    return ctx
+    return ctx, cancel
 }
 
 func setCookie(name, value, domain, path string, httpOnly, secure bool) chromedp.Action {
@@ -111,7 +118,7 @@ func setCookie(name, value, domain, path string, httpOnly, secure bool) chromedp
     })
 }
 
-func SendAnalyticsHttpRequest(query string) string {
+func (p *SearchResultsParser) SendAnalyticsHttpRequest(query string) string {
     queryEscaped := url.QueryEscape(query)
     url := "https://seller.ozon.ru/api/explainer-service/v1/explanation?companyId=201236&query=" + queryEscaped + "&locationUid=0c5b2444-70a0-4932-980c-b4dc0d3f02b5&limit=108"
 
@@ -120,19 +127,22 @@ func SendAnalyticsHttpRequest(query string) string {
         return val
     }
 
+    err = nil
     errorMessage := ""
-    for errorsCount := 0; errorsCount < 2; errorsCount++ {
-        var ctx = getChromeDpContext()
+    var ctx, cancel = p.getChromeDpContext()
+    defer cancel()
+    for errorsCount := 0; errorsCount < 3; errorsCount++ {
         var dataJson string
-        var err = chromedp.Run(ctx,
-            setCookie("__Secure-access-token", GetToken(), ".ozon.ru", "/", true, true),
-            setCookie("__Secure-refresh-token", GetToken(), ".ozon.ru", "/", true, true),
+        err = chromedp.Run(ctx,
+            setCookie("__Secure-access-token", p.token.Value(), ".ozon.ru", "/", true, true),
+            setCookie("__Secure-refresh-token", p.token.Value(), ".ozon.ru", "/", true, true),
             chromedp.Navigate(url),
             chromedp.InnerHTML(`pre`, &dataJson),
         )
 
         if err != nil {
-            panic(err)
+            fmt.Println("Try #", errorsCount, " because has error: ", err)
+            continue
         }
 
         if strings.HasPrefix(dataJson, "{\"error\"") {
@@ -159,11 +169,9 @@ func SendAnalyticsHttpRequest(query string) string {
         return dataJson
     }
 
+    if err != nil {
+        panic(err)
+    }
+
     panic(errorMessage)
-}
-
-func GetToken() string {
-    token, _ := chromeCookie.ReadToken()
-
-    return token
 }

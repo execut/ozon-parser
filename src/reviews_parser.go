@@ -12,7 +12,10 @@ import (
     "time"
 )
 
-func ParseReviews(productId string) []domain.ReviewsData {
+type ReviewsParser struct {
+}
+
+func (p ReviewsParser) ParseReviews(productId string) []domain.ReviewsData {
     var ok bool
     lastPage := 999
     var result []domain.ReviewsData
@@ -68,7 +71,7 @@ func ParseReviews(productId string) []domain.ReviewsData {
     return result
 }
 
-func ExtractTextFromReviews(reviewsPages []domain.ReviewsData) (string, string) {
+func (p ReviewsParser) ExtractTextFromReviews(reviewsPages []domain.ReviewsData) (string, string) {
     var commonText string = ""
     var positiveText string = ""
     var negativeText string = ""
@@ -96,7 +99,7 @@ func ExtractTextFromReviews(reviewsPages []domain.ReviewsData) (string, string) 
     return commonText + " " + positiveText, negativeText
 }
 
-func ExtractWordsFromReviews(result domain.AnalyticsData) domain.ReviewsResult {
+func (p ReviewsParser) ExtractWordsFromReviews(result domain.AnalyticsData) domain.ReviewsResult {
     var negativeText = ""
     var positiveText = ""
     for _, v := range result.Items {
@@ -110,8 +113,8 @@ func ExtractWordsFromReviews(result domain.AnalyticsData) domain.ReviewsResult {
 
         fmt.Println(fmt.Sprintf("Product page https://www.ozon.ru/product/%s/", v.Sku))
         fmt.Println(fmt.Sprintf("Parse reviews for https://www.ozon.ru/product/%s/reviews/", v.Sku))
-        reviewsPages := ParseReviews(v.Sku)
-        positiveTextForItem, negativeTextForItem := ExtractTextFromReviews(reviewsPages)
+        reviewsPages := p.ParseReviews(v.Sku)
+        positiveTextForItem, negativeTextForItem := p.ExtractTextFromReviews(reviewsPages)
         positiveText += " " + positiveTextForItem
         negativeText += " " + negativeTextForItem
         fmt.Println(fmt.Sprintf("Parsed %v chars of negative from 50000", len(negativeText)))

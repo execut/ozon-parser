@@ -3,6 +3,7 @@ package main
 import (
     "domain"
     "encoding/csv"
+    "execut/ozon_parser/token"
     "flag"
     "fmt"
     "github.com/schollz/progressbar/v3"
@@ -15,15 +16,23 @@ func main() {
     positionsCmd := flag.NewFlagSet("positions", flag.ExitOnError)
     inputFile := positionsCmd.String("i", "", "i")
     outputFile := positionsCmd.String("o", "", "o")
+    tokenFile := flag.String("t", "", "t")
+
+    flag.Parse()
+    if *tokenFile == "" {
+        panic("-t flag is required")
+    }
+
+    parser := SearchResultsParser{token: token.File{FilePath: *tokenFile}}
 
     if len(os.Args) < 2 {
         fmt.Println("expected 'reviews' or 'positions' subcommands")
         os.Exit(1)
     }
 
-    switch os.Args[1] {
+    switch os.Args[2] {
     case "positions":
-        positionsCmd.Parse(os.Args[2:])
+        positionsCmd.Parse(os.Args[3:])
         if *inputFile == "" {
             panic("-i flag is required")
         }
@@ -33,7 +42,8 @@ func main() {
         }
 
         keywords := extractWordsFromFile(*inputFile)
-        parseKeywords(keywords)
+
+        parseKeywords(keywords, &parser)
 
         f, err := os.Create(*outputFile)
         defer f.Close()
@@ -144,7 +154,7 @@ func main() {
         fmt.Println(fmt.Sprintf(rowFormat, "Target:", targetItem.Position, targetItem.Sku, targetItem.IsTraforetto, targetItem.PopularityScore, targetItem.PopularityTotalScore, targetItem.RatingScore, targetItem.PriceScore, targetItem.SalesScore, targetItem.FinalResult))
     case "best-positions":
         keywords := extractWordsFromFile("words-for-best-positions.csv")
-        parseKeywords(keywords)
+        parseKeywords(keywords, &parser)
         positions := ExtractPositionsList(keywords, true)
         fmt.Println("Link;SKU;Position")
         for _, position := range positions {
@@ -158,10 +168,11 @@ func main() {
         }
     case "reviews":
         keywords := extractWordsFromFile("words-for-reviews.csv")
-        parseKeywords(keywords)
+        parseKeywords(keywords, &parser)
         positions := ExtractPositionsList(keywords, true)
+        reviewsParser := ReviewsParser{}
         for _, position := range positions {
-            result := ExtractWordsFromReviews(position.Data)
+            result := reviewsParser.ExtractWordsFromReviews(position.Data)
             fmt.Println("Reviews word frequency for " + position.Keyword.Name + ":")
             fmt.Println("Positive")
             for _, word := range result.PositiveWords {
@@ -187,11 +198,11 @@ func main() {
     }
 }
 
-func parseKeywords(keywords []domain.Keyword) {
+func parseKeywords(keywords []domain.Keyword, parser *SearchResultsParser) {
     bar := progressbar.Default(int64(len(keywords)))
     for _, keyword := range keywords {
         bar.Describe(fmt.Sprintf("Begin parse products for %s", keyword.Name))
-        result := ParseAnalyticsForQuery(keyword)
+        result := parser.Parse(keyword)
         SaveAnalyticsForQuery(keyword, result)
         e := bar.Add(1)
         if e != nil {

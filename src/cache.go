@@ -25,6 +25,7 @@ func SetCachedValue(url string, dataJson string) {
 
 func GetCachedValue(url string) (string, error) {
     initRedisClient()
+    //return "", redis.Nil
 
     val, err := rdb.Get(redisCtx, url).Result()
     if err != redis.Nil && err != nil {

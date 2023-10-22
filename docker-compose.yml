@@ -7,9 +7,17 @@ services:
       ozon-parser:
     volumes:
       - ./data:/data
+    environment:
+      REDIS_HOST: "cache"
+      REDIS_PASSWORD: ""
+      DB_HOST: "db"
+      DB_PASSWORD: "postgres"
+      TZ: "Europe/Moscow"
   cache:
     image: redis:latest
     command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
     volumes:
       - cache:/data
     networks:
@@ -19,6 +27,8 @@ services:
     environment:
       POSTGRES_DB: "ozon-parser"
       POSTGRES_PASSWORD: "postgres"
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
