@@ -35,7 +35,10 @@ func SaveAnalyticsForQuery(keyword domain.Keyword, items domain.AnalyticsData) {
 
     var keywordAnalyticsResult = KeywordAnalyticsResult{Data: items, KeywordID: keywordModel.ID}
 
-    db.Create(&keywordAnalyticsResult)
+    result = db.Create(&keywordAnalyticsResult)
+    if result.Error != nil {
+        panic(result.Error)
+    }
 }
 
 func timeOfMidnight() time.Time {

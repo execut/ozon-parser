@@ -4,6 +4,7 @@ import (
     "github.com/browserutils/kooky"
     "github.com/browserutils/kooky/browser/chrome"
     "os"
+    "strings"
 )
 
 type Token interface {
@@ -32,7 +33,10 @@ func (c Chrome) Value() string {
 }
 
 func (f File) Value() string {
-    b, _ := os.ReadFile(f.FilePath)
+    b, err := os.ReadFile(f.FilePath)
+    if err != nil {
+        panic(err)
+    }
 
-    return string(b)
+    return strings.TrimSuffix(string(b), "\n")
 }
