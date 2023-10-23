@@ -1,5 +1,21 @@
-# Default values for ozon-rank-parser.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 image:
   tag: ""
+
+postgresql:
+  primary:
+    persistence:
+      existingClaim: "pvc-pg-ozon-ozon-rank-parser"
+  auth:
+    existingSecret: "ozon"
+
+redis:
+  enabled: true
+  auth:
+    existingSecret: "ozon"
+  master:
+    persistence:
+      existingClaim: "pvc-redis-ozon-ozon-rank-parser"
+  replica:
+    replicaCount: 1
+    persistence:
+      existingClaim: "pvc-redis-ozon-ozon-rank-parser"
