@@ -13,11 +13,12 @@ services:
       DB_HOST: "db"
       DB_PASSWORD: "postgres"
       TZ: "Europe/Moscow"
+    depends_on:
+      - cache
+      - db
   cache:
     image: redis:latest
     command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
     volumes:
       - cache:/data
     networks:
@@ -28,7 +29,7 @@ services:
       POSTGRES_DB: "ozon-parser"
       POSTGRES_PASSWORD: "postgres"
     ports:
-      - "5432:5432"
+      - "54321:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
